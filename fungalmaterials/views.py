@@ -210,7 +210,7 @@ def reviews_search(request):
     field_to_column = {
         "0": "title",
         # "1": "authors", # off because manytomany field
-        "2": "year",
+        "2": "year",  # This will now include year, month, and day sorting
         # "3": "topic", # off because manytomany field
     }
 
@@ -225,10 +225,7 @@ def reviews_search(request):
         order_field = "title"
 
     # Determine sorting direction
-    if order_direction == 'desc':
-        order_field = F(order_field).desc(nulls_last=True)
-    else:
-        order_field = F(order_field).asc(nulls_last=True)
+    sort_asc = order_direction == 'asc'
 
     # Filter and sort reviews
     review_query = Review.objects.filter(approved=True)
@@ -243,7 +240,25 @@ def reviews_search(request):
         ).distinct()
 
     # Apply ordering
-    review_query = review_query.order_by(order_field)
+    if order_field == "year":
+        # Sort by year, then by month (default to 0 if None), and then by day (default to 0 if None)
+        if sort_asc:
+            review_query = review_query.order_by(
+                F('year').asc(nulls_last=True),
+                Coalesce('month', Value(0)).asc(),
+                Coalesce('day', Value(0)).asc()
+            )
+        else:
+            review_query = review_query.order_by(
+                F('year').desc(nulls_last=True),
+                Coalesce('month', Value(0)).desc(),
+                Coalesce('day', Value(0)).desc()
+            )
+    else:
+        if sort_asc:
+            review_query = review_query.order_by(F(order_field).asc(nulls_last=True))
+        else:
+            review_query = review_query.order_by(F(order_field).desc(nulls_last=True))
 
     # Pagination
     paginator = Paginator(review_query, 125)
