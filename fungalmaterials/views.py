@@ -1,5 +1,6 @@
 import json
 import operator
+import unicodedata
 from collections import defaultdict
 from functools import reduce
 
@@ -24,6 +25,44 @@ from fungalmaterials.doi import get_work_by_doi, import_new_article_by_doi, impo
 from fungalmaterials.forms import DOIImportForm, DOISearchForm
 from fungalmaterials.models import Article, Review, Material, ArticleAuthorship, ReviewAuthorship, Species, Topic, \
     Method
+
+
+def generate_accent_variants(text):
+    """Generate common accent variations for search terms."""
+    if not text:
+        return [text]
+    
+    # Common accent mappings
+    accent_map = {
+        'a': ['a', 'á', 'à', 'â', 'ä', 'ã', 'å', 'ā'],
+        'e': ['e', 'é', 'è', 'ê', 'ë', 'ē', 'ė', 'ę'],
+        'i': ['i', 'í', 'ì', 'î', 'ï', 'ī', 'į'],
+        'o': ['o', 'ó', 'ò', 'ô', 'ö', 'õ', 'ō', 'ø'],
+        'u': ['u', 'ú', 'ù', 'û', 'ü', 'ū', 'ű', 'ų'],
+        'n': ['n', 'ñ', 'ń'],
+        'c': ['c', 'ç', 'ć', 'č'],
+        's': ['s', 'š', 'ś', 'ş'],
+        'y': ['y', 'ý', 'ÿ'],
+        'z': ['z', 'ž', 'ź', 'ż'],
+    }
+    
+    # Build variants list
+    variants = [text]  # Include original
+    text_lower = text.lower()
+    
+    # For each character in accent_map, if found in search text, add a variant with accents
+    for base_char, accented_chars in accent_map.items():
+        if base_char in text_lower:
+            # Add variants with each possible accent
+            for accented in accented_chars[1:]:  # Skip first (base character itself)
+                variant = text.replace(base_char, accented)
+                variants.append(variant)
+                # Also try uppercase version
+                variant_upper = text.replace(base_char.upper(), accented.upper())
+                if variant_upper != text:
+                    variants.append(variant_upper)
+    
+    return variants
 
 
 ############ ARTICLES ###########
@@ -64,14 +103,20 @@ def articles_search(request):
     article_query = Article.objects.filter(approved=True)
 
     if search_query:
-        article_query = article_query.filter(
-            Q(title__icontains=search_query) |
-            Q(authors__family__icontains=search_query) |
-            Q(year__icontains=search_query) |
-            Q(journal__icontains=search_query) |
-            Q(material__topic__name__icontains=search_query) |
-            Q(material__method__name__icontains=search_query)
-        ).distinct()
+        # Create accent-insensitive search by generating accent variants
+        search_variants = generate_accent_variants(search_query)
+        q_filter = Q()
+        
+        # Search for any variant in each field
+        for variant in search_variants:
+            q_filter |= Q(title__icontains=variant)
+            q_filter |= Q(authors__family__icontains=variant)
+            q_filter |= Q(year__icontains=variant)
+            q_filter |= Q(journal__icontains=variant)
+            q_filter |= Q(material__topic__name__icontains=variant)
+            q_filter |= Q(material__method__name__icontains=variant)
+        
+        article_query = article_query.filter(q_filter).distinct()
 
     # Apply ordering
     if order_field == "year":
@@ -231,13 +276,19 @@ def reviews_search(request):
     review_query = Review.objects.filter(approved=True)
 
     if search_query:
-        review_query = review_query.filter(
-            Q(title__icontains=search_query) |
-            Q(authors__family__icontains=search_query) |
-            Q(year__icontains=search_query) |
-            Q(journal__icontains=search_query) |
-            Q(topic__name__icontains=search_query)
-        ).distinct()
+        # Create accent-insensitive search by generating accent variants
+        search_variants = generate_accent_variants(search_query)
+        q_filter = Q()
+        
+        # Search for any variant in each field
+        for variant in search_variants:
+            q_filter |= Q(title__icontains=variant)
+            q_filter |= Q(authors__family__icontains=variant)
+            q_filter |= Q(year__icontains=variant)
+            q_filter |= Q(journal__icontains=variant)
+            q_filter |= Q(topic__name__icontains=variant)
+        
+        review_query = review_query.filter(q_filter).distinct()
 
     # Apply ordering
     if order_field == "year":
