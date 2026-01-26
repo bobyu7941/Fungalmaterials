@@ -68,6 +68,7 @@ def articles_search(request):
             Q(title__icontains=search_query) |
             Q(authors__family__icontains=search_query) |
             Q(year__icontains=search_query) |
+            Q(journal__icontains=search_query) |
             Q(material__topic__name__icontains=search_query) |
             Q(material__method__name__icontains=search_query)
         ).distinct()
@@ -237,6 +238,7 @@ def reviews_search(request):
             Q(title__icontains=search_query) |
             Q(authors__family__icontains=search_query) |
             Q(year__icontains=search_query) |
+            Q(journal__icontains=search_query) |
             Q(topic__name__icontains=search_query)
         ).distinct()
 
