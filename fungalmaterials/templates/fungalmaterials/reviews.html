@@ -3,7 +3,9 @@
 {% load static %}
 
 <style>
-	
+	.tooltip-inner {
+		max-width: 500px;
+	}
 </style>
 
 <title>Reviews | Fungalmaterials</title>
@@ -79,6 +81,11 @@
           } else {
               pagination.show();
           }
+
+          // Initialize Bootstrap tooltips for newly drawn rows
+          document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(tooltipTriggerEl) {
+              new bootstrap.Tooltip(tooltipTriggerEl, { html: true });
+          });
       },
 
       columns: [
@@ -97,7 +104,7 @@
 
                 // Truncate text if it exceeds the max length
                 if (data && data.length > max_name_length) {
-                    return data.slice(0, max_name_length) + "...";
+                    return '<span data-bs-toggle="tooltip" data-bs-placement="right" data-bs-html="true" title="' + data.replace(/"/g, '&quot;') + '">' + data.slice(0, max_name_length) + "..." + '</span>';
                 }
                 return data;
             }
