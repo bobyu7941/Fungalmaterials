@@ -60,8 +60,8 @@ jobs:
     - name: Unpack and prepare for environment
       if: success()
       run: |
-        # 3. SSH to server and create deployment directory
-        ssh -o StrictHostKeyChecking=no -J webapp@85.10.132.158 webapp@2a01:7c8:fffd:130:5054:ff:fea2:37f mkdir /srv/fungalmaterials/releases/${{ github.sha }}
+        # 3. SSH to server and create or reset deployment directory
+        ssh -o StrictHostKeyChecking=no -J webapp@85.10.132.158 webapp@2a01:7c8:fffd:130:5054:ff:fea2:37f "rm -rf /srv/fungalmaterials/releases/${{ github.sha }} && mkdir -p /srv/fungalmaterials/releases/${{ github.sha }}"
         # 4. Unpack the TGZ into the right location
         ssh -o StrictHostKeyChecking=no -J webapp@85.10.132.158 webapp@2a01:7c8:fffd:130:5054:ff:fea2:37f tar --directory=/srv/fungalmaterials/releases/${{ github.sha }} -xvf /tmp/${{ github.sha }}.tgz
 
@@ -92,9 +92,9 @@ jobs:
         echo "python3 manage.py migrate" >> deploy.sh
         
         echo "cd /srv/fungalmaterials/releases/" >> deploy.sh
-        echo "rm current" >> deploy.sh
+        echo "rm -f current" >> deploy.sh
         echo "ln -fs ${{ github.sha }} current"  >> deploy.sh
-        echo "ln -s /srv/fungalmaterials/media /srv/fungalmaterials/releases/${{ github.sha }}/media"  >> deploy.sh
+        echo "ln -sfn /srv/fungalmaterials/media /srv/fungalmaterials/releases/${{ github.sha }}/media"  >> deploy.sh
         echo "sudo systemctl start gunicorn.service" >> deploy.sh
         echo "sudo systemctl start gunicorn.socket" >> deploy.sh
         echo "sudo systemctl enable gunicorn.service" >> deploy.sh
