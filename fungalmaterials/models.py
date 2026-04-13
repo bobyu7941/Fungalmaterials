@@ -45,7 +45,7 @@ class Species(models.Model):
         ('Basidiomycota', 'Basidiomycota'),
         ('Ascomycota', 'Ascomycota'),
         ('Blastocladiomycota', 'Blastocladiomycota'),
-        ('Mycoromycota', 'Mycoromycota'),
+        ('Mucoromycota', 'Mucoromycota'),
         ('Opisthosporidia', 'Opisthosporidia'))
     phylum = models.CharField(max_length=20, choices=phylum_choice, blank=True)
 
